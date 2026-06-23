@@ -73,10 +73,8 @@
   // ytd-rich-grid-renderer の CSS カスタムプロパティを直接書き換える経路。
   // YouTube側はこの値を元にグリッドの列数とサムネイル幅を計算するため、
   // 列数を変えるだけでサムネイル自体の表示サイズも連動して拡大縮小される。
-  const reflowLayout = (data) => {
-    const grids = document.querySelectorAll("ytd-rich-grid-renderer");
-    if (!grids.length) return;
-
+  // グリッドがまだDOMに存在しない場合はMutationObserverで待機して適用する。
+  const applyToGrid = (ele, data) => {
     const {
       channelVideoPerRow,
       channelSlimItemsPerRow,
@@ -85,27 +83,57 @@
       shelfItemPerRow,
     } = data;
 
-    grids.forEach((ele) => {
-      const setStyleProps = (props) => {
-        for (const [prop, value] of Object.entries(props)) {
-          ele.style.setProperty(prop, value);
-        }
-      };
-
-      if (ele.isChannelPage) {
-        setStyleProps({
-          "--ytd-rich-grid-items-per-row": channelVideoPerRow,
-          "--ytd-rich-grid-slim-items-per-row": channelSlimItemsPerRow,
-        });
-      } else {
-        setStyleProps({
-          "--ytd-rich-grid-items-per-row": videoPerRow,
-          "--ytd-rich-grid-mini-game-cards-per-row": videoPerRow,
-          "--ytd-rich-grid-posts-per-row": postPerRow,
-          "--ytd-rich-grid-slim-items-per-row": shelfItemPerRow,
-          "--ytd-rich-grid-game-cards-per-row": shelfItemPerRow,
-        });
+    const setStyleProps = (props) => {
+      for (const [prop, value] of Object.entries(props)) {
+        ele.style.setProperty(prop, value);
       }
+    };
+
+    if (ele.isChannelPage) {
+      setStyleProps({
+        "--ytd-rich-grid-items-per-row": channelVideoPerRow,
+        "--ytd-rich-grid-slim-items-per-row": channelSlimItemsPerRow,
+      });
+    } else {
+      setStyleProps({
+        "--ytd-rich-grid-items-per-row": videoPerRow,
+        "--ytd-rich-grid-mini-game-cards-per-row": videoPerRow,
+        "--ytd-rich-grid-posts-per-row": postPerRow,
+        "--ytd-rich-grid-slim-items-per-row": shelfItemPerRow,
+        "--ytd-rich-grid-game-cards-per-row": shelfItemPerRow,
+      });
+    }
+  };
+
+  let pendingReflowData = null;
+  let reflowObserver = null;
+
+  const reflowLayout = (data) => {
+    const grids = document.querySelectorAll("ytd-rich-grid-renderer");
+
+    if (grids.length) {
+      grids.forEach((ele) => applyToGrid(ele, data));
+      return;
+    }
+
+    // グリッドがまだ存在しない(ページ読み込み中)場合は、
+    // MutationObserverで出現を待って適用する
+    pendingReflowData = data;
+
+    if (reflowObserver) return; // 既に監視中
+
+    reflowObserver = new MutationObserver(() => {
+      const grids = document.querySelectorAll("ytd-rich-grid-renderer");
+      if (!grids.length || !pendingReflowData) return;
+      grids.forEach((ele) => applyToGrid(ele, pendingReflowData));
+      pendingReflowData = null;
+      reflowObserver.disconnect();
+      reflowObserver = null;
+    });
+
+    reflowObserver.observe(document.body || document.documentElement, {
+      subtree: true,
+      childList: true,
     });
   };
 
@@ -168,14 +196,11 @@
       proto.reflowContentRF = proto.reflowContent;
 
       proto.calcElementsPerRow = function (a, b) {
-        // 大画面で「速報」セクションなどが特殊な内部値で呼ばれるケースの補正
         if (!responsive) {
-          return a === 194 ? settings.slimItemsPerRow : settings.elementsPerRow;
+          // 固定モード: bはカード最小幅。スリムカード(ショート)は通常250px未満
+          return (b && b < 250) ? settings.slimItemsPerRow : settings.elementsPerRow;
         }
-
-        if (a === 310) return settings.elementsPerRow;
-        if (a === 194) return settings.slimItemsPerRow;
-
+        // 自動調整モード(dynamicVideoPerRow=true)は元のロジックに委譲
         return this.calcElementsPerRowRF(a, b);
       };
 
@@ -190,7 +215,7 @@
         responsive = true;
 
         const isChannelPage = this.isChannelPage;
-        const clientWidth = this.hostElement ? this.hostElement.clientWidth : 0;
+        const clientWidth = this.hostElement.clientWidth;
 
         if (settings.dynamicVideoPerRow) {
           if (clientWidth > 0) {
