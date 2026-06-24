@@ -1,7 +1,7 @@
 # YouTube Grid Lab (Firefox版)
 
-YouTubeのホームページ・チャンネルページで、1行あたりの動画/ショート/投稿の表示数(列数)を自由に変更できるFirefoxアドオンです。
-列数を変えることで、結果的にサムネイルの表示サイズも拡大・縮小されます。
+YouTubeのホームページ・チャンネルページで、1行あたりの動画/ショート/投稿の表示数を自由に変更できるFirefoxアドオンです。
+1行あたりの表示数を変えることで、結果的にサムネイルの表示サイズも拡大・縮小されます。
 
 [sapondanaisriwan/youtube-row-fixer](https://github.com/sapondanaisriwan/youtube-row-fixer) を参考に、
 Firefox向けに作り直したものです。対応バージョンは **Firefox 140以降**です(2026年6月時点の最新安定版は152、
@@ -10,17 +10,17 @@ Firefox向けに作り直したものです。対応バージョンは **Firefox
 ## できること
 
 ### ホームページ
-- 動画の列数(1〜15列)
-- コミュニティ投稿の列数(1〜6列)
-- ショート動画の列数(1〜12列)
+- 1行あたりの動画数(1〜15)
+- 1行あたりの投稿数(1〜6)
+- 1行あたりのショート数(1〜12)
 - 画面幅に応じた自動調整のON/OFF
 - ショート動画の非表示
 - チャンネルアイコンの非表示
 - 動画タイトルの全文表示
 
 ### チャンネルページ
-- 動画の列数(1〜15列)
-- ショート動画の列数(1〜15列)
+- 1行あたりの動画数(1〜15)
+- 1行あたりのショート数(1〜15)
 - 幅いっぱいに表示するワイドレイアウト
 
 ### 設定
@@ -57,14 +57,10 @@ API keyはMozillaの [AMO開発者ハブ](https://addons.mozilla.org/developers/
 
 ## 技術的な仕組み(参考)
 
-- `manifest_version: 3` を使用し、`chrome.scripting.registerContentScripts` でYouTubeページに
-  - `ISOLATED` world: 拡張機能ストレージの変更を監視するブリッジスクリプト
-  - `MAIN` world: YouTube自身のPolymerコンポーネント(`ytd-rich-grid-renderer`)のprototypeをパッチして列数を制御するスクリプト
-
-  の2本を動的に登録しています。両者は `CustomEvent` で通信します。
-- 列数の変更は `ytd-rich-grid-renderer` のCSSカスタムプロパティ(`--ytd-rich-grid-items-per-row` など)を
-  書き換えることで実現しており、これによりサムネイルのサイズも連動して変化します。
-- ショート動画の表示/非表示、タイトル全文表示、ワイドレイアウトなどはCSSの `<style>` タグ注入で実現しています。
+- `manifest_version: 3` を使用し、YouTubeページには `content_script.js` を静的に注入しています。
+- 動画/ショート/投稿の表示数変更は、`ytd-rich-item-renderer` の実セル幅を CSS の `width: ... !important` で上書きして実現しています。
+  YouTube側が `refreshGridLayout` 内でインライン `style.width` を設定するため、CSSカスタムプロパティやprototype patchには依存しません。
+- ショート動画の表示/非表示、タイトル全文表示、ワイドレイアウトなども同じくCSSの `<style>` タグ注入で実現しています。
 - ポップアップUIはビルド不要のReact(ローカルにバンドル済み、CDN不使用)で構築しています。
 - アイコンは3x3グリッドをモチーフにしたオリジナルデザインです。
 - 配色テーマはCSSカスタムプロパティ(`--bg`、`--accent` など)を `<html data-theme="...">` 属性で
@@ -74,5 +70,4 @@ API keyはMozillaの [AMO開発者ハブ](https://addons.mozilla.org/developers/
 
 ## ライセンス
 
-`inject/lib/ytZara.js` は cyfung1031 氏によるMITライセンスのライブラリをそのまま使用しています。
-それ以外のコードは元プロジェクト(MITライセンス)を参考にFirefox向けに書き直したものです。
+元プロジェクト(MITライセンス)を参考にFirefox向けに書き直したものです。

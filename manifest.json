@@ -1,12 +1,19 @@
 {
   "manifest_version": 3,
-  "version": "1.2.2",
+  "version": "1.2.5",
   "name": "YouTube Grid Lab (Firefox)",
   "description": "YouTubeの1行あたりの動画数・ショート数・チャンネルページのレイアウトをカスタマイズします。配色テーマも選べます。",
-  "permissions": ["scripting", "storage"],
-  "host_permissions": ["https://www.youtube.com/*"],
+  "permissions": [
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*"
+  ],
   "background": {
-    "scripts": ["background.js"]
+    "scripts": [
+      "background.js"
+    ]
   },
   "action": {
     "default_title": "YouTube Grid Lab",
@@ -23,19 +30,13 @@
   "content_scripts": [
     {
       "run_at": "document_start",
-      "matches": ["https://www.youtube.com/*"],
-      "js": ["storage-key.js", "data.js", "storage.js", "content_script.js"]
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "matches": ["https://www.youtube.com/*"],
-      "resources": [
-        "bridge.js",
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
+      "js": [
         "storage-key.js",
-        "data.js",
-        "inject/inject_main.js",
-        "inject/lib/ytZara.js"
+        "storage.js",
+        "content_script.js"
       ]
     }
   ],
@@ -44,7 +45,9 @@
       "id": "youtube-grid-lab-fx@example.invalid",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
-        "required": ["none"]
+        "required": [
+          "none"
+        ]
       }
     }
   }
