@@ -18,18 +18,8 @@ const unregisterLegacyScripts = async () => {
   }
 };
 
-chrome.runtime.onInstalled.addListener(async ({ reason }) => {
+chrome.runtime.onInstalled.addListener(async () => {
   await unregisterLegacyScripts();
-
-  if (reason === "install") {
-    try {
-      await chrome.tabs.create({
-        url: "https://github.com/sapondanaisriwan/youtube-row-fixer",
-      });
-    } catch (err) {
-      console.warn(err);
-    }
-  }
 });
 
 if (chrome.runtime.onStartup) {
