@@ -1,8 +1,7 @@
 // manifest.json の content_scripts で document_start に静的注入されるスクリプト。
-// グリッドのCSSカスタムプロパティ自体は inject/inject_main.js (MAIN world)側が
-// 書き換えるが、それ以外の表示オプション(ショート非表示、タイトル全文表示、
-// 投稿/ショートの実セル幅、チャンネルページの幅広レイアウトなど)はここで
-// <style> タグを注入することで実現する。
+// 動画/ショート/投稿の実セル幅と表示オプションを <style> タグ注入で制御する。
+// YouTube が ytd-rich-item-renderer にインライン style.width を設定するため、
+// 列数制御は CSS カスタムプロパティではなく !important で上書きする。
 "use strict";
 
 const removeElementById = (id) => {
@@ -22,6 +21,91 @@ const addStyle = (id, css) => {
   }
   document.documentElement.append(style);
 };
+
+const itemWidth = (amount) =>
+  `calc(100% / ${amount} - var(--ytd-rich-grid-item-margin) - 0.01px)`;
+
+const gridItemWidthRules = (selector, amount) => {
+  const width = itemWidth(amount);
+  return `
+    ${selector} {
+      width: ${width} !important;
+      min-width: ${width} !important;
+      max-width: ${width} !important;
+      flex: 0 0 ${width} !important;
+    }
+  `;
+};
+
+const skeletonWidthRules = (amount) => `
+  #home-page-skeleton .rich-grid-media-skeleton,
+  #home-page-skeleton .rich-shelf-videos .rich-grid-media-skeleton.mini-mode,
+  #home-page-skeleton #home-container-media .rich-grid-media-skeleton.mini-mode {
+    min-width: calc(100% / ${amount} - 1.6rem) !important;
+    max-width: calc(100% / ${amount} - 1.6rem) !important;
+  }
+`;
+
+const responsiveWidthRules = (selector, baseAmount, dynamic, steps) => {
+  let css = gridItemWidthRules(selector, baseAmount);
+  if (!dynamic) return css;
+
+  steps.forEach(({ maxWidth, amount }) => {
+    css += `
+      @media (max-width: ${maxWidth}px) {
+        ${gridItemWidthRules(selector, amount)}
+      }
+    `;
+  });
+
+  return css;
+};
+
+const responsiveSkeletonRules = (baseAmount, dynamic, steps) => {
+  let css = skeletonWidthRules(baseAmount);
+  if (!dynamic) return css;
+
+  steps.forEach(({ maxWidth, amount }) => {
+    css += `
+      @media (max-width: ${maxWidth}px) {
+        ${skeletonWidthRules(amount)}
+      }
+    `;
+  });
+
+  return css;
+};
+
+const shelfShortsRules = (selector, amount) => `
+  ${selector} {
+    width: calc(100%/${amount} - var(--ytd-rich-grid-item-margin) - 0.01px) !important;
+  }
+`;
+
+const responsiveShelfShortsRules = (selector, baseAmount, dynamic) => {
+  let css = shelfShortsRules(selector, baseAmount);
+  if (!dynamic) return css;
+
+  [
+    { maxWidth: 1000, amount: 5 },
+    { maxWidth: 768, amount: 4 },
+    { maxWidth: 640, amount: 3 },
+  ].forEach(({ maxWidth, amount }) => {
+    css += `
+      @media (max-width: ${maxWidth}px) {
+        ${shelfShortsRules(selector, amount)}
+      }
+    `;
+  });
+
+  return css;
+};
+
+const responsiveVideoSteps = [
+  { maxWidth: 1000, amount: 4 },
+  { maxWidth: 768, amount: 3 },
+  { maxWidth: 640, amount: 2 },
+];
 
 // ---- Hide channel profile (avatar) ----
 const optionHideChannelProfile = (hideChannelProfile) => {
@@ -149,67 +233,89 @@ const optionWideChannelLayout = (wideLayout) => {
   );
 };
 
-// ---- Posts per row (実セル幅をCSS変数から計算) ----
-const optionPostsPerRow = () => {
+// ---- Videos per row (ホーム/購読フィード) ----
+const optionVideosPerRow = (amount, dynamic) => {
+  const selector = `
+    [page-subtype="home"] ytd-rich-grid-renderer:not([is-shorts-grid]) #contents > ytd-rich-item-renderer:not([is-post]):not([is-slim-media]),
+    [page-subtype="subscriptions"] ytd-rich-grid-renderer:not([is-shorts-grid]) #contents > ytd-rich-item-renderer:not([is-post]):not([is-slim-media]),
+    [page-subtype="hashtag-landing-page"] ytd-rich-grid-renderer:not([is-shorts-grid]) #contents > ytd-rich-item-renderer:not([is-post]):not([is-slim-media])
+  `;
+
+  addStyle(
+    KeyVideoPerRow,
+    responsiveWidthRules(selector, amount, dynamic, responsiveVideoSteps) +
+      responsiveSkeletonRules(amount, dynamic, responsiveVideoSteps)
+  );
+};
+
+// ---- Posts per row ----
+const optionPostsPerRow = (amount, dynamic) => {
   addStyle(
     KeyPostPerRow,
-    `
-    ytd-rich-item-renderer[is-post] {
-        width: calc(100%/var(--ytd-rich-grid-posts-per-row) - var(--ytd-rich-grid-item-margin) - 0.01px) !important;
-    }
-  `
+    responsiveWidthRules(
+      `ytd-rich-grid-renderer:not([is-shorts-grid]) #contents > ytd-rich-item-renderer[is-post]`,
+      amount,
+      dynamic,
+      responsiveVideoSteps
+    )
   );
 };
 
 // ---- Shorts per row (ホーム/購読フィードのショート棚) ----
-const optionShortsPerRow = (amount) => {
-  addStyle(
-    KeyShelfItemPerRow,
-    `
+const optionShortsPerRow = (amount, dynamic) => {
+  const selector = `
     [page-subtype="home"] ytd-rich-shelf-renderer[is-shorts] ytd-rich-item-renderer[is-slim-media],
-    [page-subtype="subscriptions"] ytd-rich-shelf-renderer[is-shorts] ytd-rich-item-renderer[is-slim-media] {
-      width: calc(100%/${amount} - var(--ytd-rich-grid-item-margin) - 0.01px) !important;
-    }
-    [page-subtype="home"] ytd-rich-shelf-renderer[is-shorts] ytd-rich-item-renderer[is-slim-media]:nth-child(n + ${amount + 1}),
-    [page-subtype="subscriptions"] ytd-rich-shelf-renderer[is-shorts] ytd-rich-item-renderer[is-slim-media]:nth-child(n + ${amount + 1}) {
-      display: none !important;
-    }
-  `
+    [page-subtype="subscriptions"] ytd-rich-shelf-renderer[is-shorts] ytd-rich-item-renderer[is-slim-media]
+  `;
+
+  addStyle(KeyShelfItemPerRow, responsiveShelfShortsRules(selector, amount, dynamic));
+};
+
+// ---- Channel page videos per row ----
+const optionChannelVideosPerRow = (amount) => {
+  addStyle(
+    KeyChannelPageVideoPerRow,
+    gridItemWidthRules(
+      `[page-subtype="channels"] ytd-rich-grid-renderer:not([is-shorts-grid]) #contents > ytd-rich-item-renderer:not([is-post]):not([is-slim-media])`,
+      amount
+    )
   );
 };
 
-// ---- Skeleton(読み込み中プレースホルダー)の幅も列数に合わせる ----
-const optionSkeletonPerRow = (videoPerRow) => {
-  addStyle(
-    KeyVideoPerRow,
-    `
-  #home-page-skeleton .rich-grid-media-skeleton,
-  #home-page-skeleton .rich-shelf-videos .rich-grid-media-skeleton.mini-mode,
-  #home-page-skeleton #home-container-media .rich-grid-media-skeleton.mini-mode {
-    min-width: calc(100% / ${videoPerRow} - 1.6rem) !important;
-    max-width: calc(100% / ${videoPerRow} - 1.6rem) !important;
-  }
-  `
-  );
+// ---- Channel page shorts per row ----
+const optionChannelShortsPerRow = (amount) => {
+  const selector = `
+    [page-subtype="channels"] ytd-rich-grid-renderer[is-shorts-grid] #contents > ytd-rich-item-renderer,
+    [page-subtype="channels"] ytd-rich-grid-renderer:not([is-shorts-grid]) #contents > ytd-rich-item-renderer[is-slim-media]
+  `;
+
+  addStyle(KeyChannelPageShelfItemPerRow, gridItemWidthRules(selector, amount));
 };
 
 const injectAllChanges = (data) => {
+  const dynamic = data[KeyDynamicVideo];
+
   optionHideChannelProfile(data[KeyHideChannelProfile]);
   optionDisplayFullTitle(data[KeyDisplayFullTitle]);
-  optionSkeletonPerRow(data[KeyVideoPerRow]);
+  optionVideosPerRow(data[KeyVideoPerRow], dynamic);
+  optionPostsPerRow(data[KeyPostPerRow], dynamic);
   optionHideShort(data[KeyHideShort]);
   optionWideChannelLayout(data[KeyChannelPageWideLayout]);
-  optionShortsPerRow(data[KeyShelfItemPerRow]);
+  optionShortsPerRow(data[KeyShelfItemPerRow], dynamic);
+  optionChannelVideosPerRow(data[KeyChannelPageVideoPerRow]);
+  optionChannelShortsPerRow(data[KeyChannelPageShelfItemPerRow]);
 };
 
 const removeAllChanges = () => {
   removeElementById(KeyHideChannelProfile);
   removeElementById(KeyDisplayFullTitle);
   removeElementById(KeyVideoPerRow);
+  removeElementById(KeyPostPerRow);
   removeElementById(KeyHideShort);
   removeElementById(KeyChannelPageWideLayout);
   removeElementById(KeyShelfItemPerRow);
-  removeElementById(KeyPostPerRow);
+  removeElementById(KeyChannelPageVideoPerRow);
+  removeElementById(KeyChannelPageShelfItemPerRow);
 };
 
 (() => {
@@ -218,14 +324,12 @@ const removeAllChanges = () => {
   chrome.storage.onChanged.addListener(async (changes) => {
     if (changes[KeyExtensionStatus]) {
       // ポップアップのマスタートグルがOFFにされた場合は、ページのリロードなしで
-      // ただちに注入済みのスタイルを取り除く(列数自体はMAIN world側が
-      // 別途イベントで受け取り responsive 計算を止める)。
+      // ただちに注入済みのスタイルを取り除く。
       if (!changes[KeyExtensionStatus].newValue) {
         removeAllChanges();
       } else {
         allData = await getAllStorage(settingKey);
         injectAllChanges(allData);
-        optionPostsPerRow();
       }
       return;
     }
@@ -245,7 +349,6 @@ const removeAllChanges = () => {
 
     allData = await getAllStorage(settingKey);
     injectAllChanges(allData);
-    optionPostsPerRow();
   };
 
   main();

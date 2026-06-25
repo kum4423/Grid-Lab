@@ -3,6 +3,14 @@
 const { useState, useEffect, useRef } = React;
 const h = React.createElement;
 
+const MANIFEST_VERSION = (() => {
+  try {
+    return chrome.runtime.getManifest().version;
+  } catch (e) {
+    return "";
+  }
+})();
+
 // ---------- storage hook ----------
 function useStorageState(key) {
   const [value, setValue] = useState(defaultSetting[key]);
@@ -216,33 +224,33 @@ function HomeTab() {
       h(SwitchRow, {
         storageKey: KeyDynamicVideo,
         label: "画面幅に応じて自動調整",
-        description: "ウィンドウを縮めたとき列数を自動で減らします",
+        description: "ウィンドウを縮めたとき1行あたりの表示数を自動で減らします",
       })
     ),
 
-    h("div", { className: "section-title" }, "列数"),
+    h("div", { className: "section-title" }, "1行あたりの表示数"),
     h(
       "div",
       { className: "panel" },
       h(SliderRow, {
         storageKey: KeyVideoPerRow,
-        label: "動画の列数",
+        label: "1行あたりの動画数",
         min: 1,
         max: 15,
         onLiveChange: setPreviewCols,
       }),
       h(SliderRow, {
         storageKey: KeyPostPerRow,
-        label: "コミュニティ投稿の列数",
+        label: "1行あたりの投稿数",
         min: 1,
         max: 6,
       }),
       h(SliderRow, {
         storageKey: KeyShelfItemPerRow,
-        label: "ショート動画の列数",
+        label: "1行あたりのショート数",
         min: 1,
         max: 12,
-        hint: "ホーム/登録チャンネルフィードに表示されるショート棚の列数です",
+        hint: "ホーム/登録チャンネルフィードに表示されるショート棚の1行あたりの表示数です",
       })
     )
   );
@@ -268,20 +276,20 @@ function ChannelTab() {
       })
     ),
 
-    h("div", { className: "section-title" }, "列数"),
+    h("div", { className: "section-title" }, "1行あたりの表示数"),
     h(
       "div",
       { className: "panel" },
       h(SliderRow, {
         storageKey: KeyChannelPageVideoPerRow,
-        label: "動画の列数",
+        label: "1行あたりの動画数",
         min: 1,
         max: 15,
         onLiveChange: setPreviewCols,
       }),
       h(SliderRow, {
         storageKey: KeyChannelPageShelfItemPerRow,
-        label: "ショート動画の列数",
+        label: "1行あたりのショート数",
         min: 1,
         max: 15,
       })
@@ -328,7 +336,7 @@ function App() {
           "div",
           { className: "brand-title" },
           "Grid Lab",
-          h("small", null, "YouTube layout tweaks")
+          h("small", null, "YouTube layout tweaks  v" + MANIFEST_VERSION)
         )
       ),
       h(
