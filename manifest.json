@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "version": "1.2.6",
+  "version": "1.3.0",
   "name": "YouTube Grid Lab (Firefox)",
   "description": "YouTubeの1行あたりの動画数・ショート数・チャンネルページのレイアウトをカスタマイズします。配色テーマも選べます。",
   "permissions": [

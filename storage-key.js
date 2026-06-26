@@ -7,14 +7,29 @@ const KeyExtensionStatus = "extensionStatus";
 const KeyPopupTheme = "popupTheme";
 
 const themeList = [
-  { id: "red", label: "YouTube Red", mode: "dark" },
-  { id: "red-light", label: "YouTube Red", mode: "light" },
-  { id: "blue", label: "Ocean Blue", mode: "dark" },
-  { id: "green", label: "Forest Green", mode: "dark" },
-  { id: "purple", label: "Grape Purple", mode: "dark" },
-  { id: "amber", label: "Sunset Amber", mode: "dark" },
-  { id: "teal", label: "Teal", mode: "dark" },
-  { id: "sepia", label: "Sepia", mode: "light" },
+  { id: "red",         label: "YouTube Red",    mode: "dark"  },
+  { id: "red-light",   label: "YouTube Red",    mode: "light" },
+  { id: "blue",        label: "Ocean Blue",     mode: "dark"  },
+  { id: "green",       label: "Forest Green",   mode: "dark"  },
+  { id: "purple",      label: "Grape Purple",   mode: "dark"  },
+  { id: "amber",       label: "Sunset Amber",   mode: "dark"  },
+  { id: "teal",        label: "Teal",           mode: "dark"  },
+  { id: "sepia",       label: "Sepia",          mode: "light" },
+  // 方向性A: 色相を埋める
+  { id: "rose",        label: "Rose Pink",      mode: "dark"  },
+  { id: "slate",       label: "Slate",          mode: "dark"  },
+  { id: "nord",        label: "Nord",           mode: "dark"  },
+  { id: "crimson",     label: "Crimson",        mode: "dark"  },
+  // 方向性B: 雰囲気・コンセプト
+  { id: "oled",        label: "OLED Black",     mode: "dark"  },
+  { id: "catppuccin",  label: "Catppuccin",     mode: "dark"  },
+  { id: "dracula",     label: "Dracula",        mode: "dark"  },
+  { id: "solarized",   label: "Solarized Dark", mode: "dark"  },
+  // 方向性C: ライト系
+  { id: "white",       label: "Pure White",     mode: "light" },
+  { id: "mint",        label: "Mint Light",     mode: "light" },
+  { id: "lavender",    label: "Lavender Light", mode: "light" },
+  { id: "sky",         label: "Sky Light",      mode: "light" },
 ];
 
 // Home page

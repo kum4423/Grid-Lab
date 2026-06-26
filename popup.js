@@ -174,20 +174,47 @@ function ThemeSwatch({ theme, selected, onSelect }) {
 }
 
 function ThemeTab({ theme, setTheme }) {
+  const groups = [
+    {
+      label: "ベーシック",
+      ids: ["red", "red-light", "blue", "green", "purple", "amber", "teal", "sepia"],
+    },
+    {
+      label: "色相拡充",
+      ids: ["rose", "slate", "nord", "crimson"],
+    },
+    {
+      label: "コンセプト",
+      ids: ["oled", "catppuccin", "dracula", "solarized"],
+    },
+    {
+      label: "ライト系",
+      ids: ["white", "mint", "lavender", "sky"],
+    },
+  ];
+
+  const themeMap = Object.fromEntries(themeList.map((t) => [t.id, t]));
+
   return h(
     React.Fragment,
     null,
-    h("div", { className: "section-title" }, "配色テーマ"),
-    h(
-      "div",
-      { className: "theme-grid" },
-      themeList.map((t) =>
-        h(ThemeSwatch, {
-          key: t.id,
-          theme: t,
-          selected: theme === t.id,
-          onSelect: setTheme,
-        })
+    groups.map(({ label, ids }) =>
+      h(
+        React.Fragment,
+        { key: label },
+        h("div", { className: "section-title" }, label),
+        h(
+          "div",
+          { className: "theme-grid" },
+          ids.map((id) =>
+            h(ThemeSwatch, {
+              key: id,
+              theme: themeMap[id],
+              selected: theme === id,
+              onSelect: setTheme,
+            })
+          )
+        )
       )
     ),
     h(
