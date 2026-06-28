@@ -24,7 +24,7 @@ Firefox向けに作り直したものです。対応バージョンは **Firefox
 - 幅いっぱいに表示するワイドレイアウト
 
 ### 設定
-- ポップアップの配色テーマを8種類から選択(YouTube Red / YouTube Red Light / Ocean Blue / Forest Green / Grape Purple / Sunset Amber / Teal / Sepia)
+- ポップアップの配色テーマを20種類から選択(YouTube Red / YouTube Red Light / Ocean Blue / Forest Green / Grape Purple / Sunset Amber / Teal / Sepia / Rose Pink / Slate / Nord / Crimson / OLED Black / Catppuccin / Dracula / Solarized Dark / Pure White / Mint Light / Lavender Light / Sky Light)
 - 配色はポップアップの見た目のみを変更し、YouTube側の表示には影響しません
 
 設定はポップアップを開いてスライダー・スイッチで変更でき、変更内容はライブプレビューで確認できます。

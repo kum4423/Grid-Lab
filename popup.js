@@ -428,7 +428,7 @@ function App() {
       h(
         "a",
         {
-          href: "https://addons.mozilla.org/firefox/",
+          href: "https://github.com/sapondanaisriwan/youtube-row-fixer",
           target: "_blank",
           rel: "noopener noreferrer",
         },

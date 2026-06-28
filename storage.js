@@ -1,6 +1,4 @@
 // chrome.storage.local への薄いラッパー
-// Firefoxの実装でも chrome.* 名前空間がエイリアスとして使えるため
-// browser.* に書き換える必要はない(WebExtension Promise APIにも両対応)
 "use strict";
 
 const getStorage = (key) => {
