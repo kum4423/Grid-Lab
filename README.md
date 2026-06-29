@@ -1,3 +1,8 @@
+<div align="center">
+
+<img src="images/gridLab-128.png" width="20%" />
+
+</div>
 # YouTube Grid Lab (Firefox版)
 
 YouTubeのホームページ・チャンネルページで、1行あたりの動画/ショート/投稿の表示数を自由に変更できるFirefoxアドオンです。
